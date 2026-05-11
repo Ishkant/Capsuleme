@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CapsuleMe — Open Your Capsule</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .reveal-banner {
+      background: var(--ink);
+      border-radius: 4px;
+      padding: 1.75rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+    .reveal-banner h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      margin-bottom: .4rem;
+    }
+    .reveal-banner p { color: #b8aea0; font-size: 13px; }
+
+    .letter-box {
+      background: #fffdf7;
+      border: 1px solid var(--gold);
+      border-left: 4px solid var(--gold);
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .letter-box .letter-tag {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+    .letter-box .letter-text {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 15px;
+      line-height: 1.85;
+      color: var(--ink);
+      white-space: pre-wrap;
+    }
+
+    .goal-checkin-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .goal-checkin-item:last-child { border-bottom: none; }
+    .goal-checkin-item .goal-text { flex: 1; }
+    .goal-checkin-item label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .goal-checkin-item input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    .open-btn-row { text-align: center; padding: 1.5rem 0 .5rem; }
+    .open-btn-row .btn-seal { font-size: 15px; padding: 14px 40px; background: var(--green); }
+    .open-btn-row .btn-seal:hover { background: #185c3a; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="index.html">Capsule<span>Me</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="create.html">Create</a>
+    <a href="capsules.html">My Capsules</a>
+  </div>
+</nav>
+
+<div class="page-wrap" id="main-content">
+  <div class="spinner"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8080/api/capsules';
+
+  // Get capsule ID from URL ?id=123
+  const params = new URLSearchParams(window.location.search);
+  const capsuleId = params.get('id');
+
+  let capsuleData = null;
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    if (!capsuleId) {
+      showError('No capsule ID found in the URL.');
+      return;
+    }
+    await loadCapsule();
+  });
+
+  async function loadCapsule() {
+    try {
+      const res = await fetch(`${API}/${capsuleId}`);
+      if (!res.ok) { showError('Capsule not found.'); return; }
+      capsuleData = await res.json();
+      renderPage();
+    } catch (err) {
+      showError('Could not connect to server. Is the backend running?');
+    }
+  }
+
+  function renderPage() {
+    const c = capsuleData;
+    const content = document.getElementById('main-content');
+
+    // Build goal check-in items HTML
+    const goalItems = (c.goals || []).map(g => `
+      <div class="goal-checkin-item">
+        <span class="goal-text">${escapeHtml(g.goalText)}</span>
+        <label>
+          <input type="checkbox" id="goal-${g.id}" value="${g.id}">
+          Achieved
+        </label>
+      </div>
+    `).join('');
+
+    // Show letter only if it exists
+    const letterHtml = c.letter ? `
+      <div class="letter-box fade-in">
+        <div class="letter-tag">Your letter from the past</div>
+        <div class="letter-text">${escapeHtml(c.letter)}</div>
+      </div>` : '';
+
+    content.innerHTML = `
+      <div class="reveal-banner fade-in">
+        <h2>It's time. 🎉</h2>
+        <p>Your capsule "<strong>${escapeHtml(c.title)}</strong>" is ready to open.<br>Answer the same questions as before — then see your growth report.</p>
+      </div>
+
+      ${letterHtml}
+
+      <div class="card fade-in">
+        <h2 class="section-title">Present Snapshot — Who are you today?</h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Answer honestly. Your answers will be compared to who you were when you sealed this capsule.</p>
+
+        <div class="slider-row">
+          <div class="slider-label">
+            Mood Score Today
+            <span class="val" id="mood-val">5</span>
+          </div>
+          <input type="range" min="1" max="10" value="5" id="u-mood"
+                 oninput="document.getElementById('mood-val').textContent=this.value"/>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-label">
+            Confidence Level Today
+            <span class="val" id="conf-val">5</span>
+          </div>
+          <input type="range" min="1" max="10" value="5" id="u-conf"
+                 oninput="document.getElementById('conf-val').textContent=this.value"/>
+        </div>
+
+        <div class="form-row">
+          <label>Biggest Fear Right Now</label>
+          <input type="text" id="u-fear" placeholder="What scares you today?" maxlength="300"/>
+        </div>
+
+        <div class="form-row">
+          <label>Describe Your Life in One Word Today</label>
+          <input type="text" id="u-word" placeholder="e.g. Growing" maxlength="50"/>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <h2 class="section-title">Goal Check-in</h2>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Be honest — did you achieve these goals?</p>
+        <div id="goal-checkin">
+          ${goalItems.length ? goalItems : '<p style="font-size:13px;color:var(--muted);">No goals were set for this capsule.</p>'}
+        </div>
+      </div>
+
+      <div class="open-btn-row">
+        <button class="btn-seal" onclick="openCapsule()" id="open-btn">✨ Open Capsule & See Report</button>
+        <p style="font-size:12px;color:var(--muted);margin-top:10px;">Your growth report will be revealed immediately.</p>
+      </div>
+    `;
+  }
+
+  async function openCapsule() {
+    const mood = parseInt(document.getElementById('u-mood').value);
+    const conf = parseInt(document.getElementById('u-conf').value);
+    const fear = document.getElementById('u-fear').value.trim();
+    const word = document.getElementById('u-word').value.trim();
+
+    // Collect goal verdicts
+    const goalVerdicts = (capsuleData.goals || []).map(g => ({
+      goalId: g.id,
+      achieved: document.getElementById(`goal-${g.id}`)?.checked || false
+    }));
+
+    const btn = document.getElementById('open-btn');
+    btn.disabled = true;
+    btn.textContent = 'Opening...';
+
+    const payload = {
+      moodScore:       mood,
+      confidenceScore: conf,
+      biggestFear:     fear,
+      lifeInOneWord:   word,
+      goalVerdicts:    goalVerdicts
+    };
+
+    try {
+      const res = await fetch(`${API}/${capsuleId}/unlock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast('Error: ' + (data.error || 'Something went wrong'));
+        btn.disabled = false;
+        btn.textContent = '✨ Open Capsule & See Report';
+        return;
+      }
+
+      // Redirect to report page
+      window.location.href = `report.html?id=${capsuleId}`;
+
+    } catch (err) {
+      showToast('Could not connect to server. Is the backend running?');
+      btn.disabled = false;
+      btn.textContent = '✨ Open Capsule & See Report';
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('main-content').innerHTML = `
+      <div class="empty-state" style="margin-top:3rem;">
+        <div class="icon">⚠️</div>
+        <p>${msg}</p>
+        <br>
+        <a href="capsules.html" class="btn-ghost" style="text-decoration:none;">Back to My Capsules</a>
+      </div>`;
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(String(text || '')));
+    return d.innerHTML;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

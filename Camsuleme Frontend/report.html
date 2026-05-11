@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CapsuleMe — Your Growth Report</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .report-hero {
+      text-align: center;
+      padding: 2.5rem 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.75rem;
+    }
+    .report-hero .subtitle {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--seal);
+      margin-bottom: .75rem;
+    }
+    .report-hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: .4rem;
+    }
+    .report-hero .dates {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* Growth Score Big Number */
+    .growth-score-block {
+      border: 1px solid var(--gold);
+      background: linear-gradient(135deg, #fffcf0 0%, #fef7e0 100%);
+      border-radius: 4px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+    .growth-score-block .big-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 72px;
+      font-weight: 600;
+      color: var(--seal);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .growth-score-block .score-label {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .growth-score-block .score-bar-wrap {
+      width: 100%;
+      max-width: 300px;
+      margin: 16px auto 0;
+      background: var(--border);
+      border-radius: 2px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .growth-score-block .score-bar-fill {
+      height: 100%;
+      background: var(--seal);
+      border-radius: 2px;
+      transition: width 1.5s ease;
+      width: 0%;
+    }
+
+    /* Side-by-side comparison */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .comp-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem;
+    }
+    .comp-card .era-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .era-label.past    { color: var(--seal); }
+    .era-label.present { color: var(--green); }
+
+    .score-pill {
+      display: inline-block;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 8px 14px;
+      margin: 4px 4px 4px 0;
+      text-align: center;
+      min-width: 80px;
+    }
+    .score-pill .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 600;
+      display: block;
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+    .score-pill .lbl {
+      font-size: 10px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .fear-row { margin-top: 12px; }
+    .fear-row .lbl {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .fear-row .val {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: var(--ink);
+    }
+    .one-word {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    /* Delta badges */
+    .delta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .delta-card {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem;
+      text-align: center;
+      background: var(--card);
+    }
+    .delta-card .delta-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .delta-card .delta-lbl {
+      font-size: 11px;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+    .positive { color: var(--green); }
+    .negative { color: var(--seal); }
+    .neutral  { color: var(--muted); }
+
+    /* Goal verdicts */
+    .goal-verdict-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .goal-verdict-item:last-child { border-bottom: none; }
+    .verdict-icon { font-size: 16px; min-width: 22px; text-align: center; }
+    .verdict-text { flex: 1; }
+    .verdict-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 2px;
+    }
+    .verdict-tag.yes { background: var(--green-bg); color: var(--green); }
+    .verdict-tag.no  { background: var(--red-bg); color: var(--seal); }
+
+    /* Actions */
+    .action-row {
+      text-align: center;
+      padding: 1.5rem 0;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      .comparison-grid { grid-template-columns: 1fr; }
+      .delta-grid { grid-template-columns: 1fr 1fr; }
+      .growth-score-block .big-num { font-size: 56px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="index.html">Capsule<span>Me</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="create.html">Create</a>
+    <a href="capsules.html">My Capsules</a>
+  </div>
+</nav>
+
+<div class="page-wrap" id="main-content">
+  <div class="spinner"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8080/api/capsules';
+
+  const params = new URLSearchParams(window.location.search);
+  const capsuleId = params.get('id');
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    if (!capsuleId) { showError('No capsule ID in URL.'); return; }
+    await loadReport();
+  });
+
+  async function loadReport() {
+    try {
+      const res = await fetch(`${API}/${capsuleId}/report`);
+      if (!res.ok) {
+        const err = await res.json();
+        showError(err.error || 'Could not load report.');
+        return;
+      }
+      const report = await res.json();
+      renderReport(report);
+    } catch (err) {
+      showError('Could not connect to server. Is the backend running?');
+    }
+  }
+
+  function renderReport(r) {
+    const content = document.getElementById('main-content');
+
+    const past    = r.pastSnapshot    || {};
+    const present = r.presentSnapshot || {};
+
+    const moodChange = r.moodChange || 0;
+    const confChange = r.confidenceChange || 0;
+
+    // Delta formatting helpers
+    const fmtDelta = (n) => (n > 0 ? '+' : '') + n;
+    const deltaClass = (n) => n > 0 ? 'positive' : n < 0 ? 'negative' : 'neutral';
+
+    // Goal verdicts HTML
+    const goalVerdictsHtml = (r.goalResults || []).length > 0
+      ? (r.goalResults || []).map(g => `
+          <div class="goal-verdict-item">
+            <span class="verdict-icon">${g.achieved ? '✅' : '❌'}</span>
+            <span class="verdict-text">${escapeHtml(g.goalText)}</span>
+            <span class="verdict-tag ${g.achieved ? 'yes' : 'no'}">${g.achieved ? 'Achieved' : 'Not yet'}</span>
+          </div>`)
+        .join('')
+      : '<p style="font-size:13px;color:var(--muted);">No goals were set for this capsule.</p>';
+
+    const achievedCount = r.achievedGoals || 0;
+    const totalCount    = r.totalGoals    || 0;
+
+    content.innerHTML = `
+      <div class="report-hero fade-in">
+        <div class="subtitle">Personal Growth Report</div>
+        <h1>${escapeHtml(r.capsuleTitle || 'Your Capsule')}</h1>
+        <div class="dates">Sealed ${r.createdAt || '—'} &nbsp;·&nbsp; Opened ${r.unlockedAt || 'Today'}</div>
+      </div>
+
+      <!-- Growth Score -->
+      <div class="growth-score-block fade-in">
+        <div class="big-num" id="score-num">0</div>
+        <div class="score-label">Personal Growth Score</div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" id="score-bar"></div>
+        </div>
+      </div>
+
+      <!-- Delta stats -->
+      <div class="delta-grid fade-in">
+        <div class="delta-card">
+          <div class="delta-num ${deltaClass(moodChange)}">${fmtDelta(moodChange)}</div>
+          <div class="delta-lbl">Mood Change</div>
+        </div>
+        <div class="delta-card">
+          <div class="delta-num ${deltaClass(confChange)}">${fmtDelta(confChange)}</div>
+          <div class="delta-lbl">Confidence Change</div>
+        </div>
+      </div>
+
+      <!-- Past vs Present -->
+      <div class="comparison-grid fade-in">
+        <div class="comp-card">
+          <div class="era-label past">Past You · ${r.createdAt || ''}</div>
+          <div>
+            <span class="score-pill">
+              <span class="num">${past.moodScore ?? '—'}</span>
+              <span class="lbl">Mood</span>
+            </span>
+            <span class="score-pill">
+              <span class="num">${past.confidenceScore ?? '—'}</span>
+              <span class="lbl">Conf.</span>
+            </span>
+          </div>
+          <div class="fear-row">
+            <div class="lbl">Biggest Fear</div>
+            <div class="val">"${escapeHtml(past.biggestFear || '—')}"</div>
+          </div>
+          <div class="fear-row">
+            <div class="lbl">Life in one word</div>
+            <div class="one-word">${escapeHtml(past.lifeInOneWord || '—')}</div>
+          </div>
+        </div>
+        <div class="comp-card">
+          <div class="era-label present">Present You · ${r.unlockedAt || 'Today'}</div>
+          <div>
+            <span class="score-pill" style="background:var(--green-bg);border-color:#a9dfbe;">
+              <span class="num" style="color:var(--green);">${present.moodScore ?? '—'}</span>
+              <span class="lbl">Mood</span>
+            </span>
+            <span class="score-pill" style="background:var(--green-bg);border-color:#a9dfbe;">
+              <span class="num" style="color:var(--green);">${present.confidenceScore ?? '—'}</span>
+              <span class="lbl">Conf.</span>
+            </span>
+          </div>
+          <div class="fear-row">
+            <div class="lbl">Biggest Fear</div>
+            <div class="val">"${escapeHtml(present.biggestFear || '—')}"</div>
+          </div>
+          <div class="fear-row">
+            <div class="lbl">Life in one word</div>
+            <div class="one-word">${escapeHtml(present.lifeInOneWord || '—')}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Goals -->
+      <div class="card fade-in">
+        <h2 class="section-title">Goal Verdicts &nbsp;
+          <span style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;color:var(--muted);">
+            ${achievedCount} / ${totalCount} achieved
+          </span>
+        </h2>
+        ${goalVerdictsHtml}
+      </div>
+
+      <!-- Actions -->
+      <div class="action-row fade-in">
+        <a href="create.html" class="btn-seal" style="text-decoration:none;">Create a New Capsule</a>
+        <a href="capsules.html" class="btn-ghost" style="text-decoration:none;">Back to My Capsules</a>
+      </div>
+    `;
+
+    // Animate score number counting up
+    animateScore(r.growthScore || 0);
+  }
+
+  function animateScore(target) {
+    // Animate the big number counting up
+    const el = document.getElementById('score-num');
+    const bar = document.getElementById('score-bar');
+    if (!el || !bar) return;
+
+    // Delay slightly so it's visible after render
+    setTimeout(() => {
+      bar.style.width = target + '%';
+      let current = 0;
+      const step = Math.ceil(target / 60);
+      const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = current;
+        if (current >= target) clearInterval(timer);
+      }, 20);
+    }, 300);
+  }
+
+  function showError(msg) {
+    document.getElementById('main-content').innerHTML = `
+      <div class="empty-state" style="margin-top:3rem;">
+        <div class="icon">⚠️</div>
+        <p>${escapeHtml(msg)}</p>
+        <br>
+        <a href="capsules.html" class="btn-ghost" style="text-decoration:none;">Back to My Capsules</a>
+      </div>`;
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(String(text || '')));
+    return d.innerHTML;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CapsuleMe — My Capsules</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .search-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 2rem;
+    }
+    .search-row input { flex: 1; padding: 11px 14px; }
+
+    .capsule-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 1rem;
+    }
+
+    .capsule-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      display: block;
+      color: inherit;
+    }
+    .capsule-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px; height: 100%;
+      background: var(--seal);
+    }
+    .capsule-card.unlocked::before { background: var(--green); }
+    .capsule-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--gold);
+      box-shadow: 0 4px 20px rgba(0,0,0,.06);
+    }
+
+    .capsule-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .capsule-card .meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .capsule-card .goals-preview {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .countdown {
+      font-size: 12px;
+      color: var(--gold);
+      font-weight: 500;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="index.html">Capsule<span>Me</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="create.html">Create</a>
+    <a href="capsules.html" class="active">My Capsules</a>
+  </div>
+</nav>
+
+<div class="page-wrap wide">
+  <h1 class="page-title fade-in">My Capsules</h1>
+  <p class="page-sub fade-in">Enter your email to see all capsules you've created.</p>
+
+  <div class="search-row fade-in">
+    <input type="email" id="find-email" placeholder="your@email.com" 
+           onkeydown="if(event.key==='Enter') loadCapsules()"/>
+    <button class="btn-seal" onclick="loadCapsules()">Find Capsules</button>
+  </div>
+
+  <div id="capsule-container">
+    <div class="empty-state" style="margin-top:1rem;">
+      <div class="icon">📬</div>
+      <p>Enter your email above to see your capsules.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8080/api/capsules';
+
+  // Auto-fill email if stored from create page
+  const savedEmail = localStorage.getItem('capsuleme_email');
+  if (savedEmail) {
+    document.getElementById('find-email').value = savedEmail;
+    loadCapsules();
+  }
+
+  async function loadCapsules() {
+    const email = document.getElementById('find-email').value.trim();
+    if (!email) { showToast('Please enter your email'); return; }
+
+    localStorage.setItem('capsuleme_email', email);
+
+    const container = document.getElementById('capsule-container');
+    container.innerHTML = '<div class="spinner"></div>';
+
+    try {
+      const res = await fetch(`${API}/by-email?email=${encodeURIComponent(email)}`);
+      if (!res.ok) throw new Error('Server error');
+      const capsules = await res.json();
+
+      if (!capsules || capsules.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🔍</div>
+            <p>No capsules found for <strong>${escapeHtml(email)}</strong>.</p>
+            <br>
+            <a href="create.html" class="btn-seal" style="text-decoration:none;">Create Your First Capsule</a>
+          </div>`;
+        return;
+      }
+
+      // Sort: ready first, then locked, then unlocked
+      capsules.sort((a, b) => {
+        const order = { ready: 0, locked: 1, unlocked: 2 };
+        return order[getStatus(a)] - order[getStatus(b)];
+      });
+
+      container.innerHTML = `
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">
+          Found <strong>${capsules.length}</strong> capsule(s) for ${escapeHtml(email)}
+        </p>
+        <div class="capsule-grid" id="capsule-grid"></div>`;
+
+      const grid = document.getElementById('capsule-grid');
+      grid.innerHTML = capsules.map(c => buildCapsuleCard(c)).join('');
+
+    } catch (err) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">⚠️</div>
+          <p>Could not connect to server.<br>Make sure the backend is running on port 8080.</p>
+        </div>`;
+    }
+  }
+
+  function getStatus(capsule) {
+    if (capsule.unlocked) return 'unlocked';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const unlock = new Date(capsule.unlockDate);
+    return unlock <= today ? 'ready' : 'locked';
+  }
+
+  function getDaysUntil(dateStr) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr);
+    const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    return diff;
+  }
+
+  function buildCapsuleCard(c) {
+    const status = getStatus(c);
+    const days = getDaysUntil(c.unlockDate);
+
+    let badgeHtml = '';
+    let countdownHtml = '';
+    let clickAction = `onclick="openCapsule(${c.id}, '${status}')"`;
+
+    if (status === 'ready') {
+      badgeHtml = `<span class="badge ready">🔓 Ready to Open</span>`;
+    } else if (status === 'unlocked') {
+      badgeHtml = `<span class="badge unlocked">✓ Opened</span>`;
+      clickAction = `onclick="viewReport(${c.id})"`;
+    } else {
+      badgeHtml = `<span class="badge locked">🔒 Sealed</span>`;
+      countdownHtml = `<div class="countdown">${days} day${days !== 1 ? 's' : ''} until unlock</div>`;
+    }
+
+    const goalCount = c.goals ? c.goals.length : 0;
+    const goalsText = goalCount > 0
+      ? `${goalCount} goal${goalCount !== 1 ? 's' : ''} inside`
+      : 'No goals set';
+
+    return `
+      <div class="capsule-card ${status === 'unlocked' ? 'unlocked' : ''} fade-in" ${clickAction} style="cursor:pointer;">
+        <h3>${escapeHtml(c.title)}</h3>
+        <div class="meta">
+          Created ${c.createdAt}<br>
+          Unlocks ${c.unlockDate}
+        </div>
+        ${badgeHtml}
+        ${countdownHtml}
+        <div class="goals-preview">${goalsText}</div>
+      </div>`;
+  }
+
+  function openCapsule(id, status) {
+    if (status === 'ready') {
+      window.location.href = `unlock.html?id=${id}`;
+    } else if (status === 'locked') {
+      showToast('This capsule is still sealed! Check back on the unlock date.');
+    }
+  }
+
+  function viewReport(id) {
+    window.location.href = `report.html?id=${id}`;
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(String(text)));
+    return d.innerHTML;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

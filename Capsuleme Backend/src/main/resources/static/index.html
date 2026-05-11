@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CapsuleMe — Running</title>
+    <style>
+        body { font-family: Georgia, serif; background: #fdf8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .card { background: #fff; border: 1px solid #e0d8cc; border-radius: 4px; padding: 40px 48px; text-align: center; max-width: 500px; width: 100%; }
+        h1 { font-size: 28px; color: #1a1612; margin: 0 0 8px; }
+        h1 span { color: #c0392b; }
+        p { color: #7a6f62; line-height: 1.7; }
+        .ok { display: inline-block; background: #d4edda; color: #155724; padding: 6px 16px; border-radius: 2px; font-size: 13px; font-family: monospace; margin: 12px 0 20px; }
+        .endpoints { background: #fdf8f0; border: 1px solid #e0d8cc; border-radius: 2px; padding: 14px 18px; text-align: left; }
+        .endpoints p { margin: 5px 0; font-size: 13px; font-family: monospace; color: #1a1612; }
+        .method { color: #c0392b; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Capsule<span>Me</span></h1>
+        <div class="ok">✓ Backend is running on port 8080</div>
+        <p>Place your frontend HTML files inside <code>src/main/resources/static/</code> and they will be served here.</p>
+        <div class="endpoints">
+            <p><span class="method">POST</span> /api/capsules</p>
+            <p><span class="method">GET &nbsp;</span> /api/capsules/by-email?email=</p>
+            <p><span class="method">GET &nbsp;</span> /api/capsules/{id}</p>
+            <p><span class="method">POST</span> /api/capsules/{id}/unlock</p>
+            <p><span class="method">GET &nbsp;</span> /api/capsules/{id}/report</p>
+        </div>
+    </div>
+</body>
+</html>

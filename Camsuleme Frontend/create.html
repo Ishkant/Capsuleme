@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CapsuleMe — Create Capsule</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .seal-btn-row { text-align: center; padding: 1.5rem 0 .5rem; }
+    .seal-btn-row .btn-seal { font-size: 15px; padding: 14px 40px; }
+
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2rem;
+    }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background .3s;
+    }
+    .step-dot.active { background: var(--seal); }
+    .step-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .char-count {
+      font-size: 11px;
+      color: var(--light);
+      text-align: right;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="index.html">Capsule<span>Me</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="create.html" class="active">Create</a>
+    <a href="capsules.html">My Capsules</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <h1 class="page-title fade-in">Create a Capsule</h1>
+  <p class="page-sub fade-in">Seal a moment in time. Your future self will thank you.</p>
+
+  <!-- Step 1: Your Details -->
+  <div class="card fade-in">
+    <h2 class="section-title">Your Details</h2>
+    <div class="two-col">
+      <div class="form-row">
+        <label>Your Name *</label>
+        <input type="text" id="c-name" placeholder="e.g. Aryan Sharma" maxlength="100"/>
+      </div>
+      <div class="form-row">
+        <label>Your Email *</label>
+        <input type="email" id="c-email" placeholder="you@email.com"/>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="form-row">
+        <label>Capsule Title *</label>
+        <input type="text" id="c-title" placeholder="e.g. My 2025 Self" maxlength="100"/>
+      </div>
+      <div class="form-row">
+        <label>Unlock Date *</label>
+        <input type="date" id="c-unlock"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Letter -->
+  <div class="card fade-in">
+    <h2 class="section-title">Letter to Future You</h2>
+    <div class="form-row">
+      <label>Write freely — only future you will read this</label>
+      <textarea id="c-letter" placeholder="Dear future me,&#10;&#10;Right now I am feeling...&#10;&#10;The things I care most about are...&#10;&#10;I hope by the time you read this..." maxlength="5000"></textarea>
+      <div class="char-count"><span id="letter-count">0</span> / 5000</div>
+    </div>
+  </div>
+
+  <!-- Step 3: Goals -->
+  <div class="card fade-in">
+    <h2 class="section-title">Your Goals</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Add goals you want to achieve before the capsule opens. You'll mark them done or not when you unlock.</p>
+    <ul class="goal-list" id="goal-list">
+      <!-- goals added here dynamically -->
+    </ul>
+    <div class="add-goal-row">
+      <input type="text" id="goal-input" placeholder="Type a goal and press Add or Enter..." maxlength="300"/>
+      <button class="btn-ghost" onclick="addGoal()">Add</button>
+    </div>
+    <p id="goal-error" style="font-size:12px;color:var(--seal);margin-top:6px;display:none;">Add at least one goal.</p>
+  </div>
+
+  <!-- Step 4: Snapshot -->
+  <div class="card fade-in">
+    <h2 class="section-title">Personal Snapshot — Who are you right now?</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;">Answer honestly. These same questions will be asked when you unlock — that's where the magic happens.</p>
+
+    <div class="slider-row">
+      <div class="slider-label">
+        Mood Score
+        <span class="val" id="mood-val">5</span>
+      </div>
+      <input type="range" min="1" max="10" value="5" id="c-mood"
+             oninput="document.getElementById('mood-val').textContent=this.value"/>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label">
+        Confidence Level
+        <span class="val" id="conf-val">5</span>
+      </div>
+      <input type="range" min="1" max="10" value="5" id="c-conf"
+             oninput="document.getElementById('conf-val').textContent=this.value"/>
+    </div>
+
+    <div class="form-row">
+      <label>Biggest Fear Right Now</label>
+      <input type="text" id="c-fear" placeholder="e.g. Failing my semester exams" maxlength="300"/>
+    </div>
+
+    <div class="form-row">
+      <label>Describe Your Life in One Word</label>
+      <input type="text" id="c-word" placeholder="e.g. Uncertain" maxlength="50"/>
+    </div>
+  </div>
+
+  <div class="seal-btn-row">
+    <button class="btn-seal" onclick="sealCapsule()" id="seal-btn">🔒 Seal This Capsule</button>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px;">You'll receive a confirmation email, and another on your unlock date.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8080/api/capsules';
+  let goals = [];
+
+  // Set minimum unlock date to tomorrow
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('c-unlock').min = tomorrow.toISOString().split('T')[0];
+
+  // Letter character counter
+  document.getElementById('c-letter').addEventListener('input', function () {
+    document.getElementById('letter-count').textContent = this.value.length;
+  });
+
+  // Add goal on Enter key
+  document.getElementById('goal-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); addGoal(); }
+  });
+
+  function addGoal() {
+    const input = document.getElementById('goal-input');
+    const text = input.value.trim();
+    if (!text) return;
+    goals.push(text);
+    renderGoals();
+    input.value = '';
+    document.getElementById('goal-error').style.display = 'none';
+  }
+
+  function removeGoal(index) {
+    goals.splice(index, 1);
+    renderGoals();
+  }
+
+  function renderGoals() {
+    const list = document.getElementById('goal-list');
+    if (goals.length === 0) {
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = goals.map((g, i) => `
+      <li>
+        <span class="goal-num">${i + 1}</span>
+        <span class="goal-text">${escapeHtml(g)}</span>
+        <button class="goal-remove" onclick="removeGoal(${i})" title="Remove">×</button>
+      </li>
+    `).join('');
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+  }
+
+  async function sealCapsule() {
+    const name     = document.getElementById('c-name').value.trim();
+    const email    = document.getElementById('c-email').value.trim();
+    const title    = document.getElementById('c-title').value.trim();
+    const unlock   = document.getElementById('c-unlock').value;
+    const letter   = document.getElementById('c-letter').value.trim();
+    const mood     = parseInt(document.getElementById('c-mood').value);
+    const conf     = parseInt(document.getElementById('c-conf').value);
+    const fear     = document.getElementById('c-fear').value.trim();
+    const word     = document.getElementById('c-word').value.trim();
+
+    // Validate
+    if (!name)    { showToast('Please enter your name'); return; }
+    if (!email)   { showToast('Please enter your email'); return; }
+    if (!title)   { showToast('Please give your capsule a title'); return; }
+    if (!unlock)  { showToast('Please choose an unlock date'); return; }
+    if (goals.length === 0) {
+      document.getElementById('goal-error').style.display = 'block';
+      showToast('Add at least one goal');
+      return;
+    }
+
+    const btn = document.getElementById('seal-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sealing...';
+
+    const payload = {
+      userName:        name,
+      userEmail:       email,
+      title:           title,
+      letter:          letter,
+      unlockDate:      unlock,
+      goals:           goals,
+      moodScore:       mood,
+      confidenceScore: conf,
+      biggestFear:     fear,
+      lifeInOneWord:   word
+    };
+
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast('Error: ' + (data.error || 'Something went wrong'));
+        btn.disabled = false;
+        btn.textContent = '🔒 Seal This Capsule';
+        return;
+      }
+
+      // Success — store email for capsules page, redirect
+      localStorage.setItem('capsuleme_email', email);
+      showToast('Capsule sealed! Redirecting...');
+      setTimeout(() => {
+        window.location.href = 'capsules.html';
+      }, 1600);
+
+    } catch (err) {
+      showToast('Could not connect to server. Is the backend running?');
+      btn.disabled = false;
+      btn.textContent = '🔒 Seal This Capsule';
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
